@@ -1,1 +1,18 @@
+# Rust build
 /target
+**/*.rs.bk
+
+# Environment
+.env
+.env.*
+
+# IDE/editor configs
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Logs
+*.log
+
+
