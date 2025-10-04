@@ -1,40 +1,35 @@
-use dotenv::dotenv;
-use futures::stream::StreamExt;
-use mongodb::{
-    bson::{doc, Document},
-    Client, Collection,
-};
-use std::env;
+use bdk::miniscript::policy::LiftError;
+use futures::StreamExt;
+use mongodb::{bson::doc, bson::Document, Collection};
+use serde::{Deserialize, Serialize};
 
-pub async fn connect_and_test() -> mongodb::error::Result<()> {
-    //find the .env file by dotenv
-    dotenv().ok();
+//ok this will be for the user
+#[derive(Debug, Serialize, Deserialize)]
 
-    //then access it using env::var(the_name_used_in_env)
-    //the expect()used for error if it didn't find it
-    let url = env::var("MONGODB_URL").expect("MONGODB_URL not found");
-    //Client::with_uri_str --> this create the mongodb clint form the connection string that is in the .env
-    let client = Client::with_uri_str(&url).await?;
+pub struct WalletUser {
+    pub name: String,
+    pub balance: f64,
+}
 
-    // Insert
-    let docs = vec![
-        doc! {"title": "osman "},
-        doc! {"title": "ghani "},
-        doc! {"title": "granday "},
-    ];
-    let coll: Collection<Document> = client.database("bitWallet").collection("names");
-    let data = coll.insert_many(docs).await?;
-    println!("the data: {:?}", data);
-    let filter = doc! {"title": "osman "};
-    let mut cursor = coll.find(filter).await?;
-    while let Some(result) = cursor.next().await {
+//if i want to insert a new user in the collection
+///insert new user
+pub async fn insert_user(
+    coll: &Collection<WalletUser>,
+    user: WalletUser,
+) -> mongodb::error::Result<()> {
+    coll.insert_one(user).await?;
+    Ok(())
+}
+// find all users and print it
+///find all users
+pub async fn find_user(coll: &Collection<WalletUser>) -> mongodb::error::Result<()> {
+    let filter = doc! {"title: ":"osman"};
+    let mut curser = coll.find(filter).await?;
+    while let Some(result) = curser.next().await {
         match result {
-            Ok(doc) => println!("Found: {:?}", doc),
-            Err(e) => println!("Error: {:?}", e),
+            Ok(user) => println!("Found the user: {:?}", user),
+            Err(e) => println!("errr: {:?}", e),
         }
     }
-    let the_delete = doc! {};
-    coll.delete_many(the_delete).await?;
-    println!("connected to the database!");
     Ok(())
 }
