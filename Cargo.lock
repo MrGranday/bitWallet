@@ -177,6 +177,7 @@ dependencies = [
  "bdk",
  "bdk_esplora",
  "dotenv",
+ "futures",
  "mongodb",
  "reqwest",
  "serde",
