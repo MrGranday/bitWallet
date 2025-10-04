@@ -1,8 +1,34 @@
 mod db;
+use dotenv::dotenv;
+use mongodb::{Client, Collection};
+use std::env;
+
+use db::{delete_user, find_user, insert_user, WalletUser};
 
 #[tokio::main]
 async fn main() -> mongodb::error::Result<()> {
-    db::connect_and_test().await?;
-    println!("connected to the database!");
+    // access the .env
+    dotenv().ok();
+
+    //then access this specific variable (MONGODB_URL) and then if it didnt find it
+    //expect() to show the error message
+    let url = env::var("MONGODB_URL").expect("couldn't find it ");
+    let clint = Client::with_uri_str(&url).await?;
+    let my_coll: Collection<WalletUser> = clint.database("bitWallet").collection("users");
+
+    // insert the data in here
+    let user1 = WalletUser {
+        name: "Osman".to_string(),
+        balance: 100.0,
+    };
+    println!("connected to database: ");
+    //insert user
+    insert_user(&my_coll, user1).await?;
+    println!("find the user");
+    find_user(&my_coll).await?;
+    println!("deleted the user");
+    delete_user(&my_coll).await?;
+    find_user(&my_coll).await?;
+
     Ok(())
 }
