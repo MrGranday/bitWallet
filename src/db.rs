@@ -38,3 +38,13 @@ pub async fn delete_user(coll: &Collection<WalletUser>) -> mongodb::error::Resul
     coll.delete_many(doc! {}).await?;
     Ok(())
 }
+
+pub async fn update_user_balance(
+    coll: &Collection<WalletUser>,
+    name: &str,
+    new_balance: f64,
+) -> mongodb::error::Result<()> {
+    coll.update_one(doc! {"name": name}, doc! {"$set":{"balance": new_balance}})
+        .await?;
+    Ok(())
+}

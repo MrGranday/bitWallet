@@ -3,7 +3,7 @@ use dotenv::dotenv;
 use mongodb::{Client, Collection};
 use std::env;
 
-use db::{delete_user, find_user, insert_user, WalletUser};
+use db::{delete_user, find_user, insert_user, update_user_balance, WalletUser};
 
 #[tokio::main]
 async fn main() -> mongodb::error::Result<()> {
