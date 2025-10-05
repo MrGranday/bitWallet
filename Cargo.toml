@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 bdk = "0.30.2"
 bdk_esplora = "0.22.1"
+chrono = "0.4.42"
 dotenv = "0.15.0"
 futures = "0.3.31"
 mongodb = "3.3.0"

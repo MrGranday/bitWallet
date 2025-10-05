@@ -69,3 +69,19 @@ pub async fn find_user_by_email(coll: &Collection<WalletUser>) -> mongodb::error
     }
     Ok(())
 }
+
+pub async fn create_transaction(
+    coll: &Collection<Transaction>,
+    from: &str,
+    to: &str,
+    amount: f64,
+) -> mongodb::error::Result<()> {
+    let tx = Transaction {
+        from: from.to_string(),
+        to: to.to_string(),
+        amount,
+        timestamp: chrono::Utc::now().to_rfc3339(),
+    };
+    coll.insert_one(tx).await?;
+    Ok(())
+}

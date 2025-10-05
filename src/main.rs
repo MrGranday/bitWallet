@@ -4,7 +4,8 @@ use mongodb::{Client, Collection};
 use std::env;
 
 use db::{
-    delete_user, find_user, find_user_by_email, insert_user, update_user_balance, WalletUser,
+    delete_user, find_user, find_user_by_email, insert_user, update_user_balance, Transaction,
+    WalletUser,
 };
 
 #[tokio::main]
@@ -17,6 +18,7 @@ async fn main() -> mongodb::error::Result<()> {
     let url = env::var("MONGODB_URL").expect("couldn't find it ");
     let clint = Client::with_uri_str(&url).await?;
     let my_coll: Collection<WalletUser> = clint.database("bitWallet").collection("users");
+    let tx_coll: Collection<Transaction> = clint.database("bitWallet").collection("transaction");
 
     // insert the data in here
     let user1 = WalletUser {
