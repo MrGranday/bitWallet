@@ -12,7 +12,12 @@ pub struct WalletUser {
     pub password: String,
 }
 // transaction collection
-pub struct Transaction {}
+pub struct Transaction {
+    pub from: String,
+    pub to: String,
+    pub amount: f64,
+    pub timestamp: String,
+}
 
 //if i want to insert a new user in the collection
 ///insert new user

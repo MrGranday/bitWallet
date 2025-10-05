@@ -3,7 +3,9 @@ use dotenv::dotenv;
 use mongodb::{Client, Collection};
 use std::env;
 
-use db::{delete_user, find_user, insert_user, update_user_balance, WalletUser};
+use db::{
+    delete_user, find_user, find_user_by_email, insert_user, update_user_balance, WalletUser,
+};
 
 #[tokio::main]
 async fn main() -> mongodb::error::Result<()> {
@@ -20,6 +22,8 @@ async fn main() -> mongodb::error::Result<()> {
     let user1 = WalletUser {
         name: "Osman".to_string(),
         balance: 100.0,
+        email: "osman@gmail.com".to_string(),
+        password: "12345".to_string(),
     };
     println!("connected to database: ");
     //insert user
