@@ -4,7 +4,7 @@ use mongodb::{Client, Collection};
 use std::env;
 
 use db::{
-    delete_user, find_user, find_user_by_email, insert_user, update_user_balance, Transaction,
+    delete_user, find_user_by_email, insert_user, transfer_fund, update_user_balance, Transaction,
     WalletUser,
 };
 
@@ -27,14 +27,24 @@ async fn main() -> mongodb::error::Result<()> {
         email: "osman@gmail.com".to_string(),
         password: "12345".to_string(),
     };
+    let user2 = WalletUser {
+        name: "ali".to_string(),
+        balance: 100.0,
+        email: "ali@gmail.com".to_string(),
+        password: "12345".to_string(),
+    };
     println!("connected to database: ");
     //insert user
-    insert_user(&my_coll, user1).await?;
-    println!("find the user");
-    find_user(&my_coll).await?;
-    println!("deleted the user");
-    delete_user(&my_coll).await?;
-    find_user(&my_coll).await?;
+    // insert_user(&my_coll, user1).await?;
+    // insert_user(&my_coll, user2).await?;
+    // transfer_fund(&my_coll, &tx_coll, "osman@gmail.com", "ali@gmail.com", 20.0).await?;
+    find_user_by_email(&my_coll, "osman@gmail.com").await?;
+    find_user_by_email(&my_coll, "ali@gmail.com").await?;
+    // delete_user(&my_coll, "osman@gmail.com").await?;
+    // delete_user(&my_coll, "ali@gmail.com").await?;
+    find_user_by_email(&my_coll, "osman@gmail.com").await?;
+    find_user_by_email(&my_coll, "ali@gmail.com").await?;
+    // find_user(&my_coll).await?;
 
     Ok(())
 }

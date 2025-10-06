@@ -1,4 +1,3 @@
-use dotenv::dotenv_iter;
 use futures::{stream::Filter, StreamExt};
 use mongodb::{bson::doc, bson::Document, Collection};
 use serde::{Deserialize, Serialize};
@@ -33,36 +32,44 @@ pub async fn insert_user(
 }
 // find all users and print it
 ///find all users
-pub async fn find_user(coll: &Collection<WalletUser>) -> mongodb::error::Result<()> {
-    let filter = doc! {"name":"Osman"};
-    let mut curser = coll.find(filter).await?;
-    while let Some(result) = curser.next().await {
-        match result {
-            Ok(user) => println!("Found the user: {:?}", user),
-            Err(e) => println!("errr: {:?}", e),
-            _ => println!("null"),
-        }
-    }
-    Ok(())
-}
+// pub async fn find_user(coll: &Collection<WalletUser>) -> mongodb::error::Result<()> {
+//     let filter = doc! {"name":"Osman"};
+//     let mut curser = coll.find(filter).await?;
+//     while let Some(result) = curser.next().await {
+//         match result {
+//             Ok(user) => println!("Found the user: {:?}", user),
+//             Err(e) => println!("errr: {:?}", e),
+//             _ => println!("null"),
+//         }
+//     }
+//     Ok(())
+// }
 
-pub async fn delete_user(coll: &Collection<WalletUser>) -> mongodb::error::Result<()> {
-    coll.delete_many(doc! {}).await?;
+pub async fn delete_user(coll: &Collection<WalletUser>, email: &str) -> mongodb::error::Result<()> {
+    coll.delete_many(doc! {"email": email}).await?;
+    println!("user deleted: {:?}", email);
+
     Ok(())
 }
 
 pub async fn update_user_balance(
     coll: &Collection<WalletUser>,
-    name: &str,
+    email: &str,
     new_balance: f64,
 ) -> mongodb::error::Result<()> {
-    coll.update_one(doc! {"name": name}, doc! {"$set":{"balance": new_balance}})
-        .await?;
+    coll.update_one(
+        doc! {"email": email},
+        doc! {"$set": {"balance": new_balance}},
+    )
+    .await?;
     Ok(())
 }
 
-pub async fn find_user_by_email(coll: &Collection<WalletUser>) -> mongodb::error::Result<()> {
-    let filter = doc! {"email":"osman@gmail.com"};
+pub async fn find_user_by_email(
+    coll: &Collection<WalletUser>,
+    email: &str,
+) -> mongodb::error::Result<()> {
+    let filter = doc! {"email":email};
     let mut curser = coll.find(filter).await?;
     while let Some(result) = curser.next().await {
         match result {
@@ -92,33 +99,26 @@ pub async fn create_transaction(
 
 pub async fn transfer_fund(
     coll: &Collection<WalletUser>,
+    tx_coll: &Collection<Transaction>,
     sender_email: &str,
     receiver_email: &str,
     amount: f64,
 ) -> mongodb::error::Result<()> {
-    let filter_for_sender = doc! {"email": sender_email};
-    let filter_for_receiver = doc! {"email": receiver_email};
-    let mut curser_sender = coll.find(filter_for_sender).await?;
-    while let Some(result) = curser_sender.next().await {
-        match result {
-            Ok(user) => {
-                if user.balance < amount {
-                    println!("insufflation balance: {:?}", user.balance)
-                } else {
-                    let new_balance = user.balance - amount;
-                    update_user_balance(coll, sender_email, new_balance).await;
-                }
-            }
-            Err(e) => println!("the error {:?}", e),
+    if let Some(user) = coll.find_one(doc! {"email": sender_email}).await? {
+        if user.balance < amount {
+            println!("Insufficient balance: {:?}", user.balance)
+        } else {
+            let new_balance = user.balance - amount;
+            update_user_balance(coll, sender_email, new_balance).await?;
         }
     }
-    let mut curser_receiver = coll.find(filter_for_receiver).await?;
-    while let Some(result) = curser_receiver.next().await {
-        match result {
-            Ok(user) => println!("fund received:{:?} ", user),
-            Err(e) => println!("error receiving fund: {:?}", e),
-        }
-        let new_balance = user.balace + amount;
+    if let Some(user) = coll.find_one(doc! {"email": receiver_email}).await? {
+        let new_balance = user.balance + amount;
+        update_user_balance(coll, receiver_email, new_balance).await?;
+        println!("Fund received: {:?}", user.email);
+        create_transaction(tx_coll, sender_email, receiver_email, amount).await?;
+    } else {
+        println!("Receiver not found");
     }
 
     Ok(())
