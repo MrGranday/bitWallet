@@ -1,3 +1,4 @@
+use dotenv::dotenv_iter;
 use futures::{stream::Filter, StreamExt};
 use mongodb::{bson::doc, bson::Document, Collection};
 use serde::{Deserialize, Serialize};
@@ -11,7 +12,9 @@ pub struct WalletUser {
     pub email: String,
     pub password: String,
 }
+
 // transaction collection
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Transaction {
     pub from: String,
     pub to: String,
@@ -67,6 +70,7 @@ pub async fn find_user_by_email(coll: &Collection<WalletUser>) -> mongodb::error
             Err(e) => println!("the error {:?}", e),
         }
     }
+
     Ok(())
 }
 
@@ -83,5 +87,39 @@ pub async fn create_transaction(
         timestamp: chrono::Utc::now().to_rfc3339(),
     };
     coll.insert_one(tx).await?;
+    Ok(())
+}
+
+pub async fn transfer_fund(
+    coll: &Collection<WalletUser>,
+    sender_email: &str,
+    receiver_email: &str,
+    amount: f64,
+) -> mongodb::error::Result<()> {
+    let filter_for_sender = doc! {"email": sender_email};
+    let filter_for_receiver = doc! {"email": receiver_email};
+    let mut curser_sender = coll.find(filter_for_sender).await?;
+    while let Some(result) = curser_sender.next().await {
+        match result {
+            Ok(user) => {
+                if user.balance < amount {
+                    println!("insufflation balance: {:?}", user.balance)
+                } else {
+                    let new_balance = user.balance - amount;
+                    update_user_balance(coll, sender_email, new_balance).await;
+                }
+            }
+            Err(e) => println!("the error {:?}", e),
+        }
+    }
+    let mut curser_receiver = coll.find(filter_for_receiver).await?;
+    while let Some(result) = curser_receiver.next().await {
+        match result {
+            Ok(user) => println!("fund received:{:?} ", user),
+            Err(e) => println!("error receiving fund: {:?}", e),
+        }
+        let new_balance = user.balace + amount;
+    }
+
     Ok(())
 }
