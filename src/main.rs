@@ -4,7 +4,7 @@ use mongodb::{Client, Collection};
 use std::env;
 
 use db::{
-    check_balance, delete_user, find_user_by_email, get_user_transaction, insert_user,
+    check_balance, delete_user, find_user_by_email, get_user_transaction, insert_user, login_user,
     transfer_fund, update_user_balance, Transaction, WalletUser,
 };
 
@@ -35,8 +35,8 @@ async fn main() -> mongodb::error::Result<()> {
     };
     println!("connected to database: ");
     //insert user
-    insert_user(&my_coll, user1).await?;
-    insert_user(&my_coll, user2).await?;
+    // insert_user(&my_coll, user1).await?;
+    // insert_user(&my_coll, user2).await?;
     transfer_fund(&my_coll, &tx_coll, "osman@gmail.com", "ali@gmail.com", 20.0).await?;
     // find_user_by_email(&my_coll, "osman@gmail.com").await?;
     // find_user_by_email(&my_coll, "ali@gmail.com").await?;
@@ -48,6 +48,8 @@ async fn main() -> mongodb::error::Result<()> {
     // check_balance(&my_coll, "osman@gmail.com").await?;
     get_user_transaction(&tx_coll, "ali@gmail.com").await?;
     get_user_transaction(&tx_coll, "osman@gmail.com").await?;
+
+    login_user(&my_coll, "osman@gmail.com", "12345").await?;
 
     // find_user(&my_coll).await?;
 

@@ -159,3 +159,20 @@ pub async fn get_user_transaction(
     }
     Ok(())
 }
+
+pub async fn login_user(
+    coll: &Collection<WalletUser>,
+    email: &str,
+    password: &str,
+) -> mongodb::error::Result<()> {
+    if let Some(user) = coll
+        .find_one(doc! {"$and":[ {"email":email},{"password":password}]})
+        .await?
+    {
+        println!("Login successful: {:?}", user);
+    } else {
+        println!("Invalid email or password");
+    }
+
+    Ok(())
+}
