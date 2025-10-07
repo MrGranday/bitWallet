@@ -192,3 +192,23 @@ pub async fn deposit_fund(
     }
     Ok(())
 }
+
+pub async fn withdraw_fund(
+    coll: &Collection<WalletUser>,
+    email: &str,
+    amount: f64,
+) -> mongodb::error::Result<()> {
+    if let Some(user) = coll.find_one(doc! {"email":email}).await? {
+        if amount <= user.balance {
+            let new_balance = user.balance - amount;
+            println!(
+                "you withdraw: {:?} and your current balance is: {:?} ",
+                amount, new_balance
+            );
+            update_user_balance(coll, email, new_balance).await?;
+        } else {
+            println!("insefitiont balance your balance is : {:?}", user.balance)
+        }
+    }
+    Ok(())
+}
