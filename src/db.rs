@@ -138,3 +138,24 @@ pub async fn check_balance(
     }
     Ok(())
 }
+
+pub async fn get_user_transaction(
+    coll: &Collection<Transaction>,
+    email: &str,
+) -> mongodb::error::Result<()> {
+    let filter = doc! {"$or": [{"from": email}, {"to": email}]};
+    let mut curser = coll.find(filter).await?;
+    while let Some(result) = curser.next().await {
+        match result {
+            Ok(tx) => {
+                if tx.from == email {
+                    println!("you have sent: {:?}, to : {:?}", tx.amount, tx.to);
+                } else {
+                    println!("you have received :{:?}, from : {:?}", tx.amount, tx.from)
+                }
+            }
+            Err(e) => println!("error reading the transaction{:?}", e),
+        }
+    }
+    Ok(())
+}
