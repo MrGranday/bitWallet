@@ -123,3 +123,18 @@ pub async fn transfer_fund(
 
     Ok(())
 }
+
+pub async fn check_balance(
+    coll: &Collection<WalletUser>,
+    email: &str,
+) -> mongodb::error::Result<()> {
+    if let Some(user) = coll.find_one(doc! {"email": email}).await? {
+        println!(
+            "the user: {:?} , and the balance{:?}",
+            user.email, user.balance
+        )
+    } else {
+        println!("user not found !");
+    }
+    Ok(())
+}
