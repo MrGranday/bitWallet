@@ -176,3 +176,19 @@ pub async fn login_user(
 
     Ok(())
 }
+
+pub async fn deposit_fund(
+    coll: &Collection<WalletUser>,
+    email: &str,
+    amount: f64,
+) -> mongodb::error::Result<()> {
+    if let Some(user) = coll.find_one(doc! {"email":email}).await? {
+        let new_balance = user.balance + amount;
+        println!("you deposit to :{:?}", user.email);
+        println!("your current balance is :{:?}", user.balance);
+        update_user_balance(coll, email, new_balance).await?;
+    } else {
+        println!("User not found ");
+    }
+    Ok(())
+}
