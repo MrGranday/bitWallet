@@ -20,8 +20,9 @@ pub struct Transaction {
     pub amount: f64,
     pub timestamp: String,
 }
-#[derive(Debug, Serialize, Deserialize)]
+
 // transaction logs
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TransactionLogs {
     pub from: String,
     pub to: String,
