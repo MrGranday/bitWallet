@@ -39,7 +39,7 @@ async fn main() -> mongodb::error::Result<()> {
     //insert user
     // insert_user(&my_coll, user1).await?;
     // insert_user(&my_coll, user2).await?;
-    transfer_fund(&my_coll, &tx_coll, "osman@gmail.com", "ali@gmail.com", 20.0).await?;
+    // transfer_fund(&my_coll, &tx_coll, "osman@gmail.com", "ali@gmail.com", 20.0).await?;
     // find_user_by_email(&my_coll, "osman@gmail.com").await?;
     // find_user_by_email(&my_coll, "ali@gmail.com").await?;
     // delete_user(&my_coll, "osman@gmail.com").await?;

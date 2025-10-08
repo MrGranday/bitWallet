@@ -110,6 +110,7 @@ pub async fn create_transaction(
 pub async fn transfer_fund(
     coll: &Collection<WalletUser>,
     tx_coll: &Collection<Transaction>,
+    tx_t_coll: &Collection<TransactionLogs>,
     sender_email: &str,
     receiver_email: &str,
     amount: f64,
@@ -124,9 +125,11 @@ pub async fn transfer_fund(
     }
     if let Some(user) = coll.find_one(doc! {"email": receiver_email}).await? {
         let new_balance = user.balance + amount;
+        let tx_type = "Transfer";
         update_user_balance(coll, receiver_email, new_balance).await?;
         println!("Fund received: {:?}", user.email);
         create_transaction(tx_coll, sender_email, receiver_email, amount).await?;
+        log_transaction(tx_t_coll, sender_email, receiver_email, amount, tx_type).await?;
     } else {
         println!("Receiver not found");
     }
