@@ -5,7 +5,7 @@ use std::env;
 
 use db::{
     check_balance, delete_user, find_user_by_email, get_user_transaction, insert_user, login_user,
-    transfer_fund, update_user_balance, Transaction, WalletUser,
+    transfer_fund, update_user_balance, Transaction, TransactionLogs, WalletUser,
 };
 
 #[tokio::main]
@@ -19,6 +19,8 @@ async fn main() -> mongodb::error::Result<()> {
     let clint = Client::with_uri_str(&url).await?;
     let my_coll: Collection<WalletUser> = clint.database("bitWallet").collection("users");
     let tx_coll: Collection<Transaction> = clint.database("bitWallet").collection("transaction");
+    let tx_logs_coll: Collection<TransactionLogs> =
+        clint.database("bitWallet").collection("transaction_logs");
 
     // insert the data in here
     let user1 = WalletUser {

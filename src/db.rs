@@ -20,6 +20,15 @@ pub struct Transaction {
     pub amount: f64,
     pub timestamp: String,
 }
+#[derive(Debug, Serialize, Deserialize)]
+// transaction logs
+pub struct TransactionLogs {
+    pub from: String,
+    pub to: String,
+    pub amount: f64,
+    pub tx_type: String,
+    pub timestamp: chrono::DateTime<chrono::Utc>,
+}
 
 //if i want to insert a new user in the collection
 ///insert new user
@@ -207,8 +216,27 @@ pub async fn withdraw_fund(
             );
             update_user_balance(coll, email, new_balance).await?;
         } else {
-            println!("insefitiont balance your balance is : {:?}", user.balance)
+            println!("insufficient balance your balance is : {:?}", user.balance)
         }
     }
+    Ok(())
+}
+
+pub async fn log_transaction(
+    coll: &Collection<TransactionLogs>,
+    from: &str,
+    to: &str,
+    amount: f64,
+    tx_type: &str,
+) -> mongodb::error::Result<()> {
+    let log = TransactionLogs {
+        from: from.to_string(),
+        to: to.to_string(),
+        amount,
+        tx_type: tx_type.to_string(),
+        timestamp: chrono::Utc::now(),
+    };
+
+    coll.insert_one(log).await?;
     Ok(())
 }
