@@ -15,3 +15,5 @@ reqwest = { version = "0.12.4", features = ["json"] } # enable JSON if you need
 serde = { version = "1.0", features = ["derive"] }    # enable derive for structs
 serde_json = "1.0"
 tokio = { version = "1.47", features = ["full"] }     # enable full runtime
+
+bitwallet_chain = { path = "./bitwallet_chain" }

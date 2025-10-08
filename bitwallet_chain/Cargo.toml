@@ -1,0 +1,19 @@
+[package]
+name = "bitwallet_chain"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# --- Core Bitcoin Wallet Engine ---
+bdk = "0.30.2"                       # Bitcoin Development Kit (handles keys, wallet, blockchain sync)
+bdk_esplora = "0.22.1"               # Esplora backend to connect your wallet to testnet blockchain explorer
+
+# --- Data Handling ---
+serde = { version = "1.0", features = ["derive"] }    # Serialization for structs
+serde_json = "1.0"                                   # JSON parsing (for saving/loading wallets later)
+
+# --- Utilities ---
+dotenvy = "0.15"                     # For reading .env configs like API URLs
+anyhow = "1.0"                       # Better error handling system (standard for Rust pros)
+chrono = { version = "0.4", features = ["serde"] }    # For timestamps
+tokio = { version = "1.47", features = ["full"] }     # Async runtime for async blockchain sync
