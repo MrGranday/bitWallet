@@ -115,26 +115,31 @@ pub async fn transfer_fund(
     receiver_email: &str,
     amount: f64,
 ) -> mongodb::error::Result<()> {
-    let sender = coll.find_one(doc! {"email": sender_email}).await?;
-    let receiver = coll.find_one(doc! {"email": receiver_email}).await?;
-    if sender.is_some() && receiver.is_some() {
-        println!("user found");
-        let sender_user = sender.unwrap();
-        let receiver_user = receiver.unwrap();
+    if let Some(sender_user) = coll.find_one(doc! {"email": sender_email}).await? {
+        if let Some(receiver_user) = coll.find_one(doc! {"email": receiver_email}).await? {
+            println!("Both users found");
 
-        if sender_user.balance >= amount {
-            let sent_balance = sender_user.balance - amount;
-            let receive_balance = receiver_user.balance + amount;
-            let tx_type = "Transfer fund";
-            update_user_balance(coll, receiver_email, receive_balance).await?;
-            update_user_balance(coll, sender_email, sent_balance).await?;
-            create_transaction(tx_coll, sender_email, receiver_email, amount).await?;
-            log_transaction(tx_t_coll, sender_email, receiver_email, amount, tx_type).await?;
-            println!("Fund transfer: ")
+            if sender_user.balance >= amount {
+                let sent_balance = sender_user.balance - amount;
+                let receive_balance = receiver_user.balance + amount;
+                let tx_type = "Transfer fund";
+
+                update_user_balance(coll, receiver_email, receive_balance).await?;
+                update_user_balance(coll, sender_email, sent_balance).await?;
+                create_transaction(tx_coll, sender_email, receiver_email, amount).await?;
+                log_transaction(tx_t_coll, sender_email, receiver_email, amount, tx_type).await?;
+
+                println!("Fund transfer successful");
+            } else {
+                println!("Insufficient balance");
+            }
         } else {
-            println!(" insufficient balance");
+            println!("Receiver not found");
         }
+    } else {
+        println!("Sender not found");
     }
+
     Ok(())
 }
 
