@@ -1,14 +1,12 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+pub struct WalletHandle {
+    // the actual wallet object from bdk
+    //stores UTXOs,keys,transaction cache, and etc
+    pub wallet: bdk::Wallet<bdk::database::MemoryDatabase>,
+    pub wallet_name: String,
+    pub network: String,
+    pub descriptor_receive: String,
+    pub descriptor_change: String,
+    pub backend_url: String,
+    pub wallet_instance: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
 }
