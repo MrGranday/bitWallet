@@ -23,4 +23,8 @@ pub struct ChainConfig {
     pub retry_attempts: u32,
     pub timeout_secs: u64,
     pub use_proxy: bool,
+    pub log_level: String,
+    pub sync_mode: String,
 }
+
+pub async fn create_or_restore_wallet() {}
