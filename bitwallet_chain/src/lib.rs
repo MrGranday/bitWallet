@@ -15,3 +15,12 @@ pub struct WalletHandle {
     //When the wallet was created.
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
+
+//ChainConfig struct defines where and how wallet connects to the blockchain network.
+pub struct ChainConfig {
+    pub network: bdk::bitcoin::Network,
+    pub esplora_url: String,
+    pub retry_attempts: u32,
+    pub timeout_secs: u64,
+    pub use_proxy: bool,
+}
