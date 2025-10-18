@@ -1,3 +1,6 @@
+use dotenv::dotenv;
+use std::env;
+
 pub struct WalletHandle {
     // the actual wallet object from bdk
     //stores UTXOs,keys,transaction cache, and etc
@@ -25,4 +28,7 @@ pub struct ChainConfig {
     pub use_proxy: bool,
 }
 
-pub async fn create_or_restore_wallet() {}
+pub async fn create_or_restore_wallet() {
+    dotenv().ok();
+    let esplora_url_load = env::var("ESPLORA_URL").expect("can't find the esplora api");
+}
