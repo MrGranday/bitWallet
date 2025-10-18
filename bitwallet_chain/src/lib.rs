@@ -31,9 +31,18 @@ pub struct ChainConfig {
 pub async fn create_or_restore_wallet() {
     dotenv().ok();
     let esplora_url_load = env::var("ESPLORA_URL").expect("can't find the esplora api variable");
-    let network = env::var("NETWORK").expect("can't find the network variable");
-    let retry_attempts =
+    let network_load = env::var("NETWORK").expect("can't find the network variable");
+    let retry_attempts_load =
         env::var("RETRY_ATTEMPTS").expect("can't find the retry attempts variable");
-    let timeout_secs = env::var("TIMEOUT_SECS").expect("can't find the the timeout sec variable");
-    let use_proxy = env::var("USE_PROXY").expect("can't find the use proxy variable");
+    let timeout_secs_load =
+        env::var("TIMEOUT_SECS").expect("can't find the the timeout sec variable");
+    let use_proxy_load = env::var("USE_PROXY").expect("can't find the use proxy variable");
+
+    let chainconfg = ChainConfig {
+        network: network.to_string(),
+        esplora_url: esplora_url.to_string(),
+        retry_attempts: retry_attempts,
+        timeout_secs: time_secs,
+        use_proxy: use_proxy,
+    };
 }
