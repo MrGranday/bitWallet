@@ -57,10 +57,10 @@ pub async fn create_or_restore_wallet() {
         .expect("USE_PROXY must be true or false");
 
     let chainconfg = ChainConfig {
-        network: network.to_string(),
-        esplora_url: esplora_url.to_string(),
+        network: network,
+        esplora_url: esplora_url_load,
         retry_attempts: retry_attempts,
-        timeout_secs: time_secs,
+        timeout_secs: timeout_secs,
         use_proxy: use_proxy,
     };
 }
