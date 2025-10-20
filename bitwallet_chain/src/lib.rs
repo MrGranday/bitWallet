@@ -1,3 +1,4 @@
+use bdk::bitcoin::network;
 use dotenv::dotenv;
 use std::env;
 
@@ -32,11 +33,28 @@ pub async fn create_or_restore_wallet() {
     dotenv().ok();
     let esplora_url_load = env::var("ESPLORA_URL").expect("can't find the esplora api variable");
     let network_load = env::var("NETWORK").expect("can't find the network variable");
+
+    let network = match network_load.as_str() {
+        "Testnet" => bdk::bitcoin::Network::Testnet,
+        "Mainnet" => bdk::bitcoin::Network::Bitcoin,
+        "Signet" => bdk::bitcoin::Network::Signet,
+        "Regtest" => bdk::bitcoin::Network::Regtest,
+        _ => panic!("Invalid network type in .env file"),
+    };
     let retry_attempts_load =
         env::var("RETRY_ATTEMPTS").expect("can't find the retry attempts variable");
+    let retry_attempts = retry_attempts_load
+        .parse()
+        .expect("the Retry_attempts should be number");
     let timeout_secs_load =
         env::var("TIMEOUT_SECS").expect("can't find the the timeout sec variable");
+    let timeout_secs: u64 = timeout_secs_load
+        .parse()
+        .expect("the timeout secs should be a number");
     let use_proxy_load = env::var("USE_PROXY").expect("can't find the use proxy variable");
+    let use_proxy: bool = use_proxy_load
+        .parse()
+        .expect("USE_PROXY must be true or false");
 
     let chainconfg = ChainConfig {
         network: network.to_string(),
