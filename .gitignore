@@ -15,4 +15,7 @@
 # Logs
 *.log
 
-
+# Project Documentation (Ignored)
+project_state.txt
+bitcoin_implementation_plan.txt
+bitcoin_integration_walkthrough.txt
