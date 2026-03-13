@@ -260,3 +260,47 @@ pub async fn log_transaction(
     coll.insert_one(log).await?;
     Ok(())
 }
+
+pub async fn assign_deposit_address(
+    coll: &Collection<WalletUser>,
+    email: &str,
+    address: &str,
+) -> mongodb::error::Result<()> {
+    coll.update_one(
+        doc! {"email": email},
+        doc! {"$set": {"deposit_address": address}},
+    )
+    .await?;
+    println!("Assigned deposit address {} to user {}", address, email);
+    Ok(())
+}
+
+pub async fn find_user_by_deposit_address(
+    coll: &Collection<WalletUser>,
+    address: &str,
+) -> mongodb::error::Result<Option<WalletUser>> {
+    let filter = doc! {"deposit_address": address};
+    let user = coll.find_one(filter).await?;
+    Ok(user)
+}
+
+pub async fn credit_onchain_deposit(
+    coll: &Collection<WalletUser>,
+    tx_t_coll: &Collection<TransactionLogs>,
+    email: &str,
+    amount_sats: u64,
+    txid: &str,
+) -> mongodb::error::Result<()> {
+    if let Some(user) = coll.find_one(doc! {"email": email}).await? {
+        let amount_btc = (amount_sats as f64) / 100_000_000.0;
+        let new_balance = user.balance + amount_btc;
+        let tx_type = format!("onchain_deposit_txid:{}", txid);
+        
+        println!("Crediting on-chain deposit to: {:?}", user.email);
+        update_user_balance(coll, email, new_balance).await?;
+        log_transaction(tx_t_coll, "bitcoin_network", &user.email, amount_btc, &tx_type).await?;
+    } else {
+        println!("User not found for on-chain credit");
+    }
+    Ok(())
+}
