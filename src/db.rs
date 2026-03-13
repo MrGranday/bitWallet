@@ -10,6 +10,7 @@ pub struct WalletUser {
     pub balance: f64,
     pub email: String,
     pub password: String,
+    pub deposit_address: Option<String>,
 }
 
 // transaction collection

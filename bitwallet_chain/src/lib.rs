@@ -1,66 +1,111 @@
-use bdk::bitcoin::network;
-use dotenv::dotenv;
+use anyhow::{Context, Result};
+use bdk::bitcoin::network::constants::Network;
+use bdk::bitcoin::secp256k1::Secp256k1;
+use bdk::bitcoin::Address;
+use bdk::blockchain::EsploraBlockchain;
+use bdk::database::MemoryDatabase;
+use bdk::wallet::AddressIndex;
+use bdk::{SignOptions, SyncOptions, Wallet};
 use std::env;
+use std::str::FromStr;
 
 pub struct WalletHandle {
-    // the actual wallet object from bdk
-    //stores UTXOs,keys,transaction cache, and etc
-    pub wallet: bdk::Wallet<bdk::database::MemoryDatabase>,
-    //Identifier string for this wallet
-    pub wallet_name: String,
-    //Enum representing the network (Testnet/Mainnet/Regtest).
-    pub network: bdk::bitcoin::Network,
-    //Descriptor formula for receiving addresses.
-    pub descriptor_receive: String,
-    //Descriptor formula for change addresses.
-    pub descriptor_change: String,
-    //Esplora endpoint for blockchain data.
-    pub backend_url: String,
-    //When the wallet was created.
-    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub wallet: Wallet<MemoryDatabase>,
+    pub network: Network,
+    pub esplora_client: EsploraBlockchain,
 }
 
-//ChainConfig struct defines where and how wallet connects to the blockchain network.
-pub struct ChainConfig {
-    pub network: bdk::bitcoin::Network,
-    pub esplora_url: String,
-    pub retry_attempts: u32,
-    pub timeout_secs: u64,
-    pub use_proxy: bool,
+pub fn init_hot_wallet() -> Result<WalletHandle> {
+    dotenvy::dotenv().ok();
+
+    let network_str = env::var("NETWORK").unwrap_or_else(|_| "Testnet".to_string());
+    let network = match network_str.as_str() {
+        "Testnet" => Network::Testnet,
+        "Mainnet" => Network::Bitcoin,
+        "Signet" => Network::Signet,
+        "Regtest" => Network::Regtest,
+        _ => Network::Testnet,
+    };
+
+    let esplora_url = env::var("ESPLORA_URL").unwrap_or_else(|_| "https://mutinynet.com/api".to_string());
+    let esplora_client = EsploraBlockchain::new(&esplora_url, 20);
+
+    // We use a fixed descriptor from .env for the hot wallet.
+    // If none exists, we fallback to a hardcoded testnet descriptor for testing purposes.
+    // WARNING: DO NOT USE THIS HARDCODED KEY WITH REAL FUNDS.
+    let descriptor = env::var("HOT_WALLET_DESCRIPTOR").unwrap_or_else(|_| {
+        "wpkh(tprv8ZgxMBicQKsPcx5nBGsR63Pe8DoJCjqxVDnS4d8B7C72eYFDRS4sM9u2n9qZ4QCRK7g2t2qJ2aL8A6r9wWpZ4vYpEEDpP5P5r1Rj5P5q1P/84'/1'/0'/0/*)".to_string()
+    });
+
+    let wallet = Wallet::new(
+        &descriptor,
+        Some(&descriptor.replace("/0/*", "/1/*")), // Change descriptor
+        network,
+        MemoryDatabase::default(),
+    )
+    .context("Failed to initialize wallet")?;
+
+    Ok(WalletHandle {
+        wallet,
+        network,
+        esplora_client,
+    })
 }
 
-pub async fn create_or_restore_wallet() {
-    dotenv().ok();
-    let esplora_url_load = env::var("ESPLORA_URL").expect("can't find the esplora api variable");
-    let network_load = env::var("NETWORK").expect("can't find the network variable");
+pub fn generate_deposit_address(handle: &WalletHandle) -> Result<String> {
+    let address = handle.wallet.get_address(AddressIndex::New)?;
+    Ok(address.address.to_string())
+}
 
-    let network = match network_load.as_str() {
-        "Testnet" => bdk::bitcoin::Network::Testnet,
-        "Mainnet" => bdk::bitcoin::Network::Bitcoin,
-        "Signet" => bdk::bitcoin::Network::Signet,
-        "Regtest" => bdk::bitcoin::Network::Regtest,
-        _ => panic!("Invalid network type in .env file"),
-    };
-    let retry_attempts_load =
-        env::var("RETRY_ATTEMPTS").expect("can't find the retry attempts variable");
-    let retry_attempts = retry_attempts_load
-        .parse()
-        .expect("the Retry_attempts should be number");
-    let timeout_secs_load =
-        env::var("TIMEOUT_SECS").expect("can't find the the timeout sec variable");
-    let timeout_secs: u64 = timeout_secs_load
-        .parse()
-        .expect("the timeout secs should be a number");
-    let use_proxy_load = env::var("USE_PROXY").expect("can't find the use proxy variable");
-    let use_proxy: bool = use_proxy_load
-        .parse()
-        .expect("USE_PROXY must be true or false");
+pub async fn sync_wallet(handle: &WalletHandle) -> Result<()> {
+    handle
+        .wallet
+        .sync(&handle.esplora_client, SyncOptions::default())
+        .await
+        .context("Failed to sync wallet with Esplora backend")?;
+    Ok(())
+}
 
-    let chainconfg = ChainConfig {
-        network: network,
-        esplora_url: esplora_url_load,
-        retry_attempts: retry_attempts,
-        timeout_secs: timeout_secs,
-        use_proxy: use_proxy,
-    };
+pub fn get_wallet_balance(handle: &WalletHandle) -> Result<u64> {
+    let balance = handle.wallet.get_balance()?;
+    Ok(balance.get_spendable())
+}
+
+pub async fn withdraw_on_chain(
+    handle: &WalletHandle,
+    to_address: &str,
+    amount_sats: u64,
+) -> Result<String> {
+    let to_addr = Address::from_str(to_address)
+        .context("Invalid recipient address")?;
+
+    let mut tx_builder = handle.wallet.build_tx();
+    tx_builder.add_recipient(to_addr.script_pubkey(), amount_sats);
+    
+    // We add a fee rate. bdk allows setting it directly or estimating. We will set a conservative fixed fee rate of 5 sat/vB for testnet.
+    tx_builder.fee_rate(bdk::FeeRate::from_sat_per_vb(5.0));
+
+    let (mut psbt, _details) = tx_builder
+        .finish()
+        .context("Failed to build transaction (insufficient funds?)")?;
+
+    let finalized = handle
+        .wallet
+        .sign(&mut psbt, SignOptions::default())
+        .context("Failed to sign transaction")?;
+
+    if !finalized {
+        anyhow::bail!("Transaction was not completely signed");
+    }
+
+    let raw_tx = psbt.extract_tx();
+    let txid = raw_tx.txid();
+
+    handle
+        .esplora_client
+        .broadcast(&raw_tx)
+        .await
+        .context("Failed to broadcast transaction")?;
+
+    Ok(txid.to_string())
 }
